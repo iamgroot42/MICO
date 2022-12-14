@@ -102,6 +102,14 @@ class ChallengeDataset:
             Dataset: The challenge examples.
         """
         return self.challenge
+    
+    def get_rest(self) -> Dataset:
+        """Returns the 'rest' (all - challenge)
+        
+        Returns:
+            Dataset: The 'rest' examples
+        """
+        return self.rest
 
     def get_train_dataset(self) -> Dataset:
         """Returns the training dataset.
