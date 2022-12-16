@@ -243,8 +243,15 @@ class MLP(nn.Module):
             nn.Linear(128, 100)
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.mlp(x)
+    def forward(self, x: torch.Tensor, get_all: bool = False) -> torch.Tensor:
+        if not get_all:
+            return self.mlp(x)
+        reps = []
+        for i, layer in enumerate(self.mlp):
+            x = layer(x)
+            if i == 1 or i == 2:
+                reps.append(x.detach())
+        return reps
 
     @classmethod
     def load(cls: Type[Y], path: Union[str, os.PathLike]) -> Y:

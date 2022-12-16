@@ -8,6 +8,9 @@ __pycache__/
 
 # Data
 data/*
+purchase100/*
+submissions/*
+plots/*
 
 # Distribution / packaging
 .Python
