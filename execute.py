@@ -26,8 +26,8 @@ import pandas as pd
 import zipfile
 
 
-from fart_squirrel.attacks import ValueAttack, MetaClassifierAttack
-from fart_squirrel.features import get_loss_values, get_gradient_update_norms, neighborhood_loss_robustness_weighted, gradient_updates_and_robustness
+from fart_squirrel.attacks import ValueAttack, MetaClassifierAttack, ShadowAttack
+import fart_squirrel.features as my_features
 
 
 def pack_results_as_file(experiment_name: str):
@@ -104,20 +104,21 @@ def print_allscores_tables(all_scores, focus='train'):
 
 
 if __name__ == "__main__":
-    phases = ['dev', 'final', 'train']
+    # phases = ['dev', 'final', 'train']
+    # phases = ['train', 'dev', 'final']
+    phases = ['dev', 'final']
 
     dataset = load_purchase100(dataset_dir="/u/as9rw/work/MICO/data")
-    # feature_extractor = get_gradient_update_norms
-    feature_extractor = gradient_updates_and_robustness
+    feature_extractor = my_features.get_loss_values
     # attacker = MetaClassifierAttack(dataset, feature_extractor)
-    # feature_extractor = neighborhood_loss_robustness_weighted
-    attacker = ValueAttack(dataset, feature_extractor)
+    # attacker = ValueAttack(dataset, feature_extractor)
+    attacker = ShadowAttack(dataset, feature_extractor)
     attacker.train()
 
-    for scenario in tqdm(SCENARIOS, desc="scenario"):
-        for phase in tqdm(phases, desc="phase"):
+    for phase in tqdm(phases, desc="phase"):
+        for scenario in tqdm(SCENARIOS, desc="scenario"):
             root = os.path.join(CHALLENGE, scenario, phase)
-            for model_folder in tqdm(sorted(os.listdir(root), key=lambda d: int(d.split('_')[1])), desc="model"):
+            for i, model_folder in tqdm(enumerate(sorted(os.listdir(root), key=lambda d: int(d.split('_')[1]))), desc="model", total=len(os.listdir(root))):
                 path = os.path.join(root, model_folder)
                 challenge_dataset = ChallengeDataset.from_path(
                     path, dataset=dataset, len_training=LEN_TRAINING)
@@ -128,18 +129,27 @@ if __name__ == "__main__":
                 challenge_dataloader = torch.utils.data.DataLoader(
                     challenge_points, batch_size=2*LEN_CHALLENGE)
                 features, labels = next(iter(challenge_dataloader))
-                features, labels = features.cuda(), labels.cuda()
 
-                predictions = attacker.get_predictions(scenario, model, features, labels)
+                misc_dict = {
+                    "phase": phase,
+                    "model_index": i
+                }
+                predictions = attacker.get_predictions(scenario, model,
+                                                       features, labels,
+                                                       misc_dict=misc_dict)
                 assert np.all((0 <= predictions) & (predictions <= 1))
 
             with open(os.path.join(path, "prediction.csv"), "w") as f:
                 csv.writer(f).writerow(predictions)
 
-    pack_results_as_file("loss_test")
-    scores = check_train_performance()
-    plot_allscores(scores)
-    print_allscores_tables(scores)
+        if phase == "train":
+            scores = check_train_performance()
+            plot_allscores(scores)
+            print_allscores_tables(scores)
+
+    # Pack results in ZIP file
+    pack_results_as_file("current_attack")
+
     # scores = check_train_performance_meta(attacker)
     # plot_allscores(scores, focus='train_val')
     # print_allscores_tables(scores, focus='train_val')

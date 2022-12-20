@@ -11,6 +11,8 @@ data/*
 purchase100/*
 submissions/*
 plots/*
+*.npy
+launch.json
 
 # Distribution / packaging
 .Python

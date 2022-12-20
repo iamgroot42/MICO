@@ -162,6 +162,25 @@ class ChallengeDataset:
 
         return labels
 
+    def get_rest_solutions(self) -> List:
+        """Returns the membership labels of the points in 'rest'
+
+        Raises:
+            ValueError: If the seed to generate the evaluation dataset has not been set.
+
+        Returns:
+            List: The list of membership labels for rest, indexed as in the
+            Dataset returned by `get_rest()`.
+        """
+        if self.member is None:
+            raise ValueError("The seed to split challenges into members/non-members has not been set.")
+
+        member_indices = set(self.rest.indices[i] for i in self.member.indices)
+
+        labels = [1 if i in member_indices else 0 for i in self.rest.indices]
+
+        return labels
+
     @classmethod
     def from_path(cls: Type[D], path: Union[str, os.PathLike], dataset: Dataset, len_training: int, len_challenge: int=LEN_CHALLENGE) -> D:
         """Loads a ChallengeDataset from a directory `path`.
