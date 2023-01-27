@@ -225,12 +225,15 @@ class CNN(nn.Module):
     def __init__(self):
         super().__init__()
         self.cnn = nn.Sequential(
-            nn.Conv2d(3, 128, kernel_size=8, stride=2, padding=3), nn.Tanh(),
-            nn.MaxPool2d(kernel_size=3, stride=1),
-            nn.Conv2d(128, 256, kernel_size=3), nn.Tanh(),
-            nn.Conv2d(256, 256, kernel_size=3), nn.Tanh(),
+            nn.Conv2d(3, 128, kernel_size=8, stride=2, padding=3),
+            nn.Tanh(),
+            nn.MaxPool2d(kernel_size=3, stride=1), # 2
+            nn.Conv2d(128, 256, kernel_size=3),
+            nn.Tanh(), # 4
+            nn.Conv2d(256, 256, kernel_size=3),
+            nn.Tanh(),
             nn.AvgPool2d(kernel_size=2, stride=2),
-            nn.Flatten(),
+            nn.Flatten(), # 8
             nn.Linear(in_features=6400, out_features=10)
         )
 
@@ -268,8 +271,7 @@ class MLP(nn.Module):
         reps = []
         for i, layer in enumerate(self.mlp):
             x = layer(x)
-            if i == 1 or i == 2:
-                reps.append(x.detach())
+            reps.append(x.detach())
         return reps
 
     @classmethod
